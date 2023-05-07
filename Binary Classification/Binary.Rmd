@@ -1,6 +1,8 @@
 ---
 title: "Binary Classification"
-output: github_document
+output:
+  github_document:
+    toc: true
 date: "`r Sys.Date()`"
 ---
 
@@ -11,14 +13,16 @@ knitr::opts_chunk$set(echo = TRUE)
 # Load data
 
 ```{r}
-#Titanic <- read.csv("Titanic.csv")
+library("rmarkdown")
+setwd("C:/Users/Noah/Desktop/Github files/Data/")
+Titanic <- read.csv("C:/Users/Noah/Desktop/Github files/Data/Titanic.csv")
 ```
 
 Since PassengerID is unique for each person we will drop it, we also will not need Name, Fare, Embarked, and Ticket, since these will not determine a persons survival. Cabin also contains a large number of NAs so it will be dropped as well.
 
 ```{r}
 library(dplyr)
-Titanic = select(Titanic, Survived, Pclass, Age, Sex, SibSp, Parch)
+Titanic <- data.frame(Titanic) %>% select( Survived, Pclass, Age, Sex, SibSp, Parch)
 ```
 
 ```{r}
