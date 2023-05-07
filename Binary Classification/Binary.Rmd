@@ -1,0 +1,101 @@
+---
+title: "Binary Classification"
+output: github_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load data
+
+```{r}
+#Titanic <- read.csv("Titanic.csv")
+```
+
+Since PassengerID is unique for each person we will drop it, we also will not need Name, Fare, Embarked, and Ticket, since these will not determine a persons survival. Cabin also contains a large number of NAs so it will be dropped as well.
+
+```{r}
+library(dplyr)
+Titanic = select(Titanic, Survived, Pclass, Age, Sex, SibSp, Parch)
+```
+
+```{r}
+Titanic$Survived<- as.factor(Titanic$Survived)
+Titanic$Sex<- as.factor(Titanic$Sex)
+Titanic <- subset(Titanic, !is.na(Age))
+summary(Titanic)
+
+set.seed(222)
+index<-sample(nrow(Titanic),0.8*nrow(Titanic),replace = FALSE)
+train<-Titanic[index,]
+test<-Titanic[-index,]
+
+```
+
+# Data exploration
+
+```{r}
+library(ggplot2)
+library(cowplot)
+
+female <- ggplot(data = subset(train, Sex == "female"), aes(x = Age, fill = Survived))+
+  geom_bar(position = "identity", width = 1, alpha = 0.5)
+male <- ggplot(data = subset(train, Sex == "male"), aes(x = Age, fill = Survived))+
+  geom_bar(position = "identity", width = 1, alpha = 0.5)
+
+plot_grid(female, male)
+```
+
+On the Titanic a persons chance of surviving was definitely related to their sex, however there was an age component as well. Men around age 30 had the highest number of deaths on the Titanic based on these plots.
+
+```{r}
+class <- ggplot(train, aes(Pclass, fill = Survived))+
+  geom_bar(position = "dodge")+
+  xlab("Ticket class")
+
+siblings <-ggplot(train, aes(SibSp, fill = Survived))+
+  geom_bar(position = "dodge")+
+  xlab("Number of siblings or spouses")
+
+plot_grid(class, siblings)
+```
+
+Here we see that the ticket class also had an important role in if the passenger survived. Far more third class passengers died than survived. We can also see that people with more siblings or spouses were less likely to survive.
+
+# Logistic regression
+
+```{r}
+titanic_glm <- glm(Survived ~ Sex, data = train, family = 'binomial')
+summary(titanic_glm)
+```
+
+```{r}
+predict_survived_from_sex <- predict(titanic_glm,newdata = test,type = 'response') 
+# Since Survived can only be either 1 or 0, write if statement to round up of down the response
+predict_survived_from_sex <- ifelse(predict_survived_from_sex>0.5,1,0)
+error_1 <- mean(predict_survived_from_sex!=test$Survived)
+accuracy_1 <- 1-error_1
+accuracy_1
+```
+
+This model predicts survivability with an accuracy of 73.4%.
+
+We can try to improve the accuracy by including more variables from the dataset.
+
+```{r}
+titanic_glm2 <- glm(Survived ~., data = train, family = 'binomial')
+summary(titanic_glm2)
+```
+
+```{r}
+predict_survived <- predict(titanic_glm2,newdata = test,type = 'response') 
+# Since Survived can only be either 1 or 0, write if statement to round up of down the response
+predict_survived <- ifelse(predict_survived>0.5,1,0)
+error_2 <- mean(predict_survived!=test$Survived)
+accuracy_2 <- 1-error_2
+accuracy_2
+```
+
+Here we have increased the accuracy of the model to 76%
